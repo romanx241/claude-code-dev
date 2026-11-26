@@ -123,3 +123,13 @@
   `app/backend/CASHBACK.md`.
 - Подключение к обработчику списания и ответ API с остатком — отдельная
   заявка, в этой задаче не делаются — `app/backend/DAILY_LIMIT.md` (раздел 5).
+
+## Что я проверил
+
+утверждение: Файла `app/backend/wallet/daily_limit.py` нет: в `app/backend/wallet/`
+  его нет, а `DAILY_LIMIT.md` говорит о нём как о ещё не написанном коде —
+ где смотрел: `app/backend/wallet/`, `app/backend/DAILY_LIMIT.md`.
+ вывод: подтверждается по пути `app/backend/wallet/ нет файла daily_limit.py
+ а в DAILY_LIMIT.md указано, что документ первичен по отношению к коду
+`wallet/daily_limit.py` — так же, как `spec/openapi.yaml` первичен по
+отношению к обработчикам. 
