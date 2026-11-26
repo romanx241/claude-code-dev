@@ -33,7 +33,11 @@
   `app/backend/DAILY_LIMIT.md`.
 - Тариф кошелька — поле `tariff` у `WalletRow` (`BASIC` / `FREE`) —
   `app/backend/wallet/auth.py`; в ответе API он отдаётся как `"tariff"` —
-  `app/backend/wallet/routers/wallet.py`.
+  `app/backend/wallet/routers/wallet.py` (`GET /api/wallet/balance`).
+- Допустимые значения тарифа закреплены в схеме базы:
+  `CHECK (tariff IN ('BASIC', 'FREE'))` — `app/backend/migrations/versions/0001_initial_schema.py`.
+- Метка времени в формате `"2026-09-08T12:04:11Z"` формируется `iso_utc(moment)`
+  — `app/backend/wallet/auth.py`.
 
 ### Похожий модуль — образец устройства
 
@@ -54,7 +58,8 @@
 ### Как устроены существующие тесты и откуда они запускаются
 
 - Тесты лежат в `app/backend/tests/` — `app/backend/tests/`,
-  `app/backend/README.md` (раздел «Тесты»), `CONTRIBUTING.md` (раздел «Тесты»).
+  `CONTRIBUTING.md` (раздел «Тесты»). В `app/backend/README.md` раздела
+  про тесты нет.
 - `app/backend/tests/cashback_test.py` — тесты модуля без базы: список
   операций задан константой в памяти, проверки через `assert` и
   `pytest.mark.parametrize`; импорт `from wallet.cashback import ...`.
@@ -66,6 +71,9 @@
 - Запуск: обычный `pytest` из `app/backend` для тестов без базы; для
   контрактных — с флагом и `DATABASE_URL` тестовой базы —
   `app/backend/tests/conftest.py`, `CONTRIBUTING.md`.
+- Модуль без базы проверяется и одной командой из `app/backend`:
+  `python3 -c "import sys; sys.path.insert(0,'.'); import wallet.daily_limit"`
+  — `app/backend/DAILY_LIMIT.md` (раздел 4).
 - `pytest==8.3.4` в зависимостях — `app/backend/requirements.txt`.
 - Правило проекта: тест на дефект должен краснеть на старом коде и
   зеленеть на новом — `CONTRIBUTING.md`.
@@ -81,12 +89,21 @@
 - Нет констант лимитов по тарифам (`BASIC` — 150 000,00 ₽, `FREE` —
   30 000,00 ₽): в `app/backend/wallet/config.py` их нет, в
   `app/backend/wallet/cashback.py` есть только `TARIFF_WITH_CASHBACK`.
+  Есть только максимум одной операции `MAX_OPERATION_AMOUNT = 100000.00`
+  — `app/backend/wallet/config.py`; спецификация его не трогает —
+  `app/backend/DAILY_LIMIT.md` (раздел 2).
+- Нет разбора суток по метке: есть только `operation_month` (месяц) —
+  `app/backend/wallet/cashback.py`.
 - Нет тестов лимита: в `app/backend/tests/` только `cashback_test.py`,
   `contract_test.py` и `conftest.py`.
 - Нет подключения проверки к обработчику списания и ответа API с остатком —
   это явно вынесено за рамки спецификации — `app/backend/DAILY_LIMIT.md`
-  (раздел 5), `app/backend/wallet/routers/wallet.py` (обработчик
-  `POST /api/wallet/withdraw` лимит не проверяет).
+  (раздел 5). Обработчик `POST /api/wallet/withdraw` проверяет только
+  сумму (`INVALID_AMOUNT`, `AMOUNT_LIMIT_EXCEEDED`) и сразу зовёт
+  `withdraw_service`, лимит суток не проверяет —
+  `app/backend/wallet/routers/wallet.py`.
+- Нет проверки баланса в модуле — по спецификации это другая проверка,
+  вне документа — `app/backend/DAILY_LIMIT.md` (раздел 3).
 
 ## 3. Где будут жить модуль и тесты
 
@@ -100,3 +117,9 @@
   `app/backend/tests/conftest.py`).
 - Спецификация уже лежит рядом с кодом — `app/backend/DAILY_LIMIT.md`,
   как `app/backend/CASHBACK.md` рядом с `wallet/cashback.py`.
+- Тесты берут контрольные значения из разделов 1 и 3 спецификации
+  (история из шести операций и таблица остатков) — `app/backend/DAILY_LIMIT.md`,
+  так же как `app/backend/tests/cashback_test.py` берёт историю из
+  `app/backend/CASHBACK.md`.
+- Подключение к обработчику списания и ответ API с остатком — отдельная
+  заявка, в этой задаче не делаются — `app/backend/DAILY_LIMIT.md` (раздел 5).
